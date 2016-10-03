@@ -1,0 +1,83 @@
+<link rel="import" href="../../bower_components/paper-menu/paper-menu.html">
+<link rel="import" href="../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../../bower_components/iron-meta/iron-meta.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="contacts-list-item.html">
+<!--
+ Element shows list of contacts.
+-->
+<dom-module id="contacts-list">
+    <template>
+        <!-- meta is used to share constants across elements -->
+        <iron-meta id="meta"></iron-meta>
+        <app-location route="{{route}}"></app-location>
+        <app-route
+                route="{{route}}"
+                pattern="/:userId"
+                data="{{routeData}}"
+                tail="{{tailData}}"
+        >
+        </app-route>
+        <!-- AJAX request for retrieving list of contacts -->
+        <iron-ajax
+                auto
+                url="[[_getRestUrl()]]/users"
+                params='{}'
+                handle-as="json"
+                on-response="_usersLoaded"
+                debounce-duration="300"></iron-ajax>
+
+        <paper-material elevation="1">
+            <paper-menu class="list" on-iron-activate="_listTap">
+                <template is="dom-repeat" items="{{users}}" sort="_alphabeticCompare">
+                    <!-- repeats this section for all items and sorts them alphabetically -->
+                    <contacts-list-item user="{{item}}"></contacts-list-item>
+                </template>
+            </paper-menu>
+        </paper-material>
+    </template>
+    <script>
+        Polymer({
+            is: 'contacts-list',
+            /**
+             * Called when list item is tapped on.
+             * @param e event from tapping
+             * @param element link to tapped item.
+             * @private
+             */
+            _listTap: function (e, element) {
+                this.set('route.path', '/' + (this.narrow ? "detail/" : "main/") + element.item.user._id)
+            },
+            /**
+             * Called when contacts are received from REST API.
+             * @param data received data
+             * @private
+             */
+            _usersLoaded: function (data) {
+                this.set('users', data.detail.response);
+            },
+            properties: {
+                users: Array,
+                narrow: Boolean
+            },
+            /**
+             * @return {*} Returns REST URL to backend
+             * @private
+             */
+            _getRestUrl: function () {
+                return this.$.meta.byKey('rest_url');
+            },
+            /**
+             * Sort function for the list, based on contact's full names.
+             * @param item1 first item
+             * @param item2 second item
+             * @return {number} -1 when item1<item2 , 0 when item1==item2, 1 when item1>item2
+             * @private
+             */
+            _alphabeticCompare: function (item1, item2) {
+                return (item1.name.first + item1.name.last).localeCompare(item2.name.first + item2.name.last);
+            }
+        });
+    </script>
+</dom-module>

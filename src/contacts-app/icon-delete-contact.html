@@ -1,0 +1,80 @@
+<link rel="import" href="../../bower_components/iron-ajax/iron-request.html">
+<link rel="import" href="../../bower_components/iron-meta/iron-meta.html">
+<link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/paper-toast/paper-toast.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<!--
+    Element with delete icon button and functionality for toolbar.
+-->
+<dom-module id="icon-delete-contact">
+    <template>
+        <iron-meta id="meta"></iron-meta>
+        <iron-request id="xhr"></iron-request>
+        <paper-icon-button icon="delete" on-tap="_deleteClick"></paper-icon-button> <!-- delete icon -->
+
+        <!-- confirmation dialog -->
+        <paper-dialog id="deleteDialog">
+            <h2>Delete contact</h2>
+            <p>Are you sure to delete this contact?</p>
+            <div class="buttons">
+                <paper-button dialog-dismiss>No</paper-button>
+                <paper-button dialog-confirm autofocus on-tap="_deleteItem">Yes</paper-button>
+            </div>
+
+        </paper-dialog>
+        <paper-toast id="toast" text="Hello world!"></paper-toast> <!-- toast -->
+        <!-- AJAX request to delete the contact -->
+        <iron-ajax id="contactDelete" method="DELETE" on-response="_deleted" url="[[_getRestUrl()]]/users/{{user_id}}"
+                   on-error="_error"
+
+        ></iron-ajax>
+    </template>
+    <script>
+        Polymer({
+            is: 'icon-delete-contact',
+            properties: {
+                /**
+                 * Id of the contact
+                 */
+                user_id: String,
+            },
+            /**
+             * @return {*} Returns REST URL to backend
+             * @private
+             */
+            _getRestUrl: function () {
+                return this.$.meta.byKey('rest_url');
+            },
+            /**
+             * Called when delete icon is clicked.
+             * @private
+             */
+            _deleteClick: function () {
+                this.$.deleteDialog.open();
+            },
+            /**
+             * Called when delete is confirmed in dialog.
+             * @private
+             */
+            _deleteItem: function () {
+                this.$.contactDelete.generateRequest();
+            },
+            /**
+             * Called when delete request on API has been finished successfully.
+             * @private
+             */
+            _deleted: function () {
+                this.$.toast.show({text: 'Contatct deleted.', duration: 3000})
+                this.fire('deleted');
+            },
+            /**
+             * Called when delete request on API failed.
+             * @private
+             */
+            _error: function () {
+                this.$.toast.show({text: 'Unable to delete contact', duration: 3000})
+            }
+        });
+    </script>
+</dom-module>

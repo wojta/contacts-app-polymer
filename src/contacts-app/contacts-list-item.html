@@ -1,0 +1,52 @@
+<link rel="import" href="../../bower_components/paper-menu/paper-menu.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../../bower_components/paper-item/paper-icon-item.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item-body.html">
+<link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../../bower_components/paper-avatar-image/paper-avatar-image.html">
+<!--
+ Element represents list item with name, phone number and photo thumbnail.
+-->
+<dom-module id="contacts-list-item">
+    <template>
+        <paper-icon-item>
+            <div class="" item-icon>
+                <paper-avatar-image src="{{user.picture.thumbnail}}" no-border="true"></paper-avatar-image> <!--photo -->
+            </div>
+            <paper-item-body two-line>
+                <div>{{user.name.first}} {{user.name.last}}</div>   <!-- full name -->
+                <div secondary>{{phone_number}}</div>   <!-- phone number -->
+            </paper-item-body>
+        </paper-icon-item>
+    </template>
+    <script>
+        Polymer({
+            is: 'contacts-list-item',
+            properties: {
+                /**
+                 * Contact item which is displayed.
+                 */
+                user: Object,
+                /**
+                 * Contains phone number, cellular first when both fixed and cellular are available.
+                 */
+                phone_number: {
+                    type: String,
+                    computed: '_computePhoneNumber(user.cell,user.phone)'
+                },
+                user_id: String
+            },
+            /**
+             * Computation function for phone_number property.
+             * @param cell cell phone number
+             * @param phone fixed phone number
+             * @return {*} cell number if both are present, phone number only if phone number is present.
+             * @private
+             */
+            _computePhoneNumber: function (cell, phone) {
+                return cell ? cell : phone;
+            }
+
+        });
+    </script>
+</dom-module>

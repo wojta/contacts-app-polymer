@@ -1,0 +1,253 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../bower_components/paper-drawer-panel/paper-drawer-panel.html">
+<link rel="import" href="../../bower_components/paper-header-panel/paper-header-panel.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../../bower_components/paper-menu/paper-menu.html">
+<link rel="import" href="../../bower_components/paper-toolbar/paper-toolbar.html">
+<link rel="import" href="../../bower_components/app-route/app-route.html">
+<link rel="import" href="../../bower_components/app-route/app-location.html">
+<link rel="import" href="../../bower_components/iron-pages/iron-pages.html">
+<link rel="import" href="../../bower_components/iron-meta/iron-meta.html">
+<link rel="import" href="../../bower_components/paper-fab/paper-fab.html">
+<link rel="import" href="contacts-list.html">
+<link rel="import" href="contacts-edit.html">
+<link rel="import" href="contacts-detail.html">
+<link rel="import" href="icon-edit-contact.html">
+<link rel="import" href="icon-delete-contact.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+
+
+<!--
+`contacts-app` is a core element of the single page application, it's usually inserted to `index.html` file
+
+-->
+<dom-module id="contacts-app">
+    <template>
+        <iron-meta key="rest_url" value="{{rest_url}}"></iron-meta> <!-- meta is used to share constants across elements -->
+
+        <style is="custom-style">
+
+            paper-toolbar {
+                --paper-toolbar-title: {
+                    margin-left: 24px;
+                }
+            }
+
+            paper-toolbar.noIcon {
+                --paper-toolbar-title: {
+                    margin-left: 0;
+                }
+            }
+
+            .negMargin {
+                margin-left: -16px;
+                margin-right: -16px;
+                margin-top: -24px;
+            }
+
+            .fab {
+                position: fixed;
+                right: 16px;
+                bottom: 16px;
+            }
+        </style>
+        <app-location route="{{route}}"></app-location>
+        <app-route
+                route="{{route}}"
+                pattern="/:view"
+                data="{{routeData}}"
+                tail="{{subroute}}">
+
+        </app-route>
+
+        <app-route
+                route="{{route}}"
+                pattern="/main/:user_id"
+                data="{{userData}}">
+        </app-route>
+
+        <app-route
+                route="{{route}}"
+                pattern="/detail/:user_id"
+                data="{{userData2}}">
+        </app-route>
+
+
+        <app-route
+                route="{{route}}"
+                pattern="/edit/:user_id"
+                data="{{editData}}">
+        </app-route>
+
+
+        <body class="fullbleed vertical layout">
+        <iron-pages selected="[[selectedView]]" attr-for-selected="name" id="pages" class="negMargin">
+            <!-- main screen -->
+            <paper-drawer-panel id="main" name="main" class="flex" on-paper-responsive-change="responsiveChange"
+                                disableSwipe="true" disableEdgeSwipe="true" edgeSwipeSensitivity="0">
+                <paper-header-panel drawer hidden="{{narrow}}"> <!-- list in mobile view -->
+                    <paper-toolbar class="noIcon">
+                        <div class="left title">{{app_name}}</div> <!-- show title in mobile view -->
+                    </paper-toolbar>
+                    <contacts-list id="contacts_list_1" class="rightBorder" narrow="{{narrow}}" }></contacts-list>
+                </paper-header-panel>
+                <paper-header-panel main>
+                    <paper-toolbar class="noIcon"> <!-- toolbar -->
+                        <span class="title" hidden="{{!narrow}}">{{app_name}}</span> <!-- application title -->
+                        <span class="title" hidden="{{narrow}}"> </span> <!-- show nothing in mobile view -->
+                        <div hidden="{{narrow}}" class="layout horizontal"> <!-- icons for edit and delete -->
+                            <icon-edit-contact user_id="{{userData.user_id}}" hidden="{{!userData.user_id}}"
+                                               on-edit="_redirectEdit"></icon-edit-contact>
+                            <icon-delete-contact user_id="{{userData.user_id}}" hidden="{{!userData.user_id}}"
+                                                 on-deleted="_redirectHome"></icon-delete-contact>
+                        </div>
+                    </paper-toolbar>
+                    <!-- list in tablet view -->
+                    <contacts-list id="contacts_list_2" hidden="{{!narrow}}" narrow="{{narrow}}"></contacts-list>
+                    <!-- detail in mobile view -->
+                    <contacts-detail route="{{subroute}}" hidden="{{narrow}}"></contacts-detail>
+                    <paper-fab icon="add" on-tap="_addContact" class="fab"></paper-fab> <!-- FAB for adding contact -->
+                </paper-header-panel>
+            </paper-drawer-panel>
+
+            <!-- separate detail page for mobile devices -->
+            <div name="detail" class="flex negMargin">
+                <paper-toolbar>
+                    <paper-icon-button icon="arrow-back" on-tap="_redirectHome"></paper-icon-button> <!-- UP button -->
+                    <div class="title">Detail</div> <!-- title for Detail -->
+                    <icon-edit-contact user_id="{{userData2.user_id}}"
+                                       on-edit="_redirectEdit"></icon-edit-contact> <!-- icons for edit and delete -->
+                    <icon-delete-contact user_id="{{userData2.user_id}}"
+                                         on-deleted="_redirectHome"></icon-delete-contact>
+                </paper-toolbar>
+                <contacts-detail route="{{subroute}}"></contacts-detail>
+            </div>
+
+            <!-- separate add/edit page -->
+            <div name="edit" class="flex negMargin">
+                <paper-toolbar>
+                    <paper-icon-button icon="arrow-back" on-tap="_redirectHome"></paper-icon-button> <!-- UP button -->
+                    <div class="title">[[_getEditTitle(editData.user_id)]]</div> <!-- title for add/edit contact -->
+                </paper-toolbar>
+                <contacts-edit route="{{subroute}}" on-saved="_goDetail"></contacts-edit>
+            </div>
+
+
+        </iron-pages>
+
+
+        </body>
+    </template>
+
+    <script>
+        Polymer({
+            is: 'contacts-app',
+            /**
+             * Called when view is switched from "wide" to "mobile" (narrow) view. Usually that means the width is less then 600px.
+             * @param event change event
+             * @param narrow in attribute narrow we can find whether view is in narrow mode
+             */
+            responsiveChange: function (event, narrow) {
+                this.narrow = narrow.narrow;
+                this.$.main.disableEdgeSwipe = true;  //disables possibility to open drawer menu by swipe
+                this.$.main.disableSwipe = true;
+            },
+            /**
+             * Called when element is initialized.
+             */
+            ready: function () {
+                this.async(function () {
+                    // If the path is blank, redirect to /
+                    if (!this.route.path) {
+                        this._redirectHome();
+                    }
+                });
+            },
+            properties: {
+                /**
+                 * Is app in narrow mode?
+                 */
+                narrow: Boolean,
+                /**
+                 * Application name, will be displayed in title.
+                 */
+                app_name: String,
+                /**
+                 * This property has current page name in it.
+                 */
+                selectedView: {
+                    type: String,
+                    computed: '_selectedPage(routeData.view)'
+                },
+                /**
+                 * REST API URL that is used across application.
+                 */
+                rest_url:String
+            },
+            /**
+             * Calculation of selectedView property
+             * @param page page from route
+             * @return {*} current page name.
+             * @private
+             */
+            _selectedPage: function (page) {
+                return this.routeData.view ? this.routeData.view : "main";
+            }
+            ,
+            /**
+             * Starts add contact functionality.
+             * @private
+             */
+            _addContact: function () {
+                this.set('route.path', '/edit');
+            }
+            ,
+            /**
+             * Returns title for toolbar for edit mode
+             * @param user_id if it's not null=edit mode, if null=add mode
+             * @return {string} title of toolbar
+             * @private
+             */
+            _getEditTitle: function (user_id) {
+                return user_id ? "Edit contact" : "Add contact";
+            },
+            /**
+             * Performs jump to the main screen and reloads the page.
+             * @private
+             */
+            _redirectHome: function () {
+                this.set('route.path', '/');
+                window.location.reload();
+            }
+            ,
+            /**
+             * Starts edit contact functionality
+             * @param e event from element
+             * @param user object containing user_id
+             * @private
+             */
+            _redirectEdit: function (e, user) {
+                this.set('route.path', '/edit/' + user.user_id);
+            }
+            ,
+            /**
+             * Starts show detail functionality.
+             * @param saveStatus result of last edit operation, must contain detail with _id with user id
+             * @private
+             */
+            _goDetail: function (saveStatus) {
+                if (saveStatus.detail._id) {
+                    this.set('route.path', (this.narrow ? '/detail/' : '/main/') + saveStatus.detail._id);
+                    window.location.reload();
+                } else {
+                    this._redirectHome();
+                }
+            }
+
+        })
+        ;
+    </script>
+</dom-module>
+

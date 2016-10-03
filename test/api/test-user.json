@@ -1,0 +1,31 @@
+{
+  "gender": "male",
+  "name": {
+    "title": "mr",
+    "first": "Testovaci",
+    "last": "Testik"
+  },
+  "location": {
+    "street": "abcderf",
+    "city": "sadfdsfsd",
+    "state": "sdfdsfds",
+    "zip": 73994
+  },
+  "email": "stanley.beck@example.com",
+  "username": "lazyduck588",
+  "password": "buddha",
+  "salt": "vjWR3Yc1",
+  "md5": "",
+  "sha1": "",
+  "sha256": "",
+  "registered": 1193223661,
+  "dob": 431832704,
+  "phone": "021-768-8431",
+  "cell": "081-759-2850",
+  "PPS": "7466773T",
+  "picture": {
+    "large": "https://randomuser.me/api/portraits/men/01.jpg",
+    "medium": "https://randomuser.me/api/portraits/med/men/01.jpg",
+    "thumbnail": "https://randomuser.me/api/portraits/thumb/men/01.jpg"
+  }
+}

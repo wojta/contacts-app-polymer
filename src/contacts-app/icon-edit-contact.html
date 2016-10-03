@@ -1,0 +1,27 @@
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<!--
+    Element with edit icon button and functionality for toolbar.
+-->
+<dom-module id="icon-edit-contact">
+    <template>
+        <paper-icon-button icon="create" on-tap="_editClicked"></paper-icon-button>
+    </template>
+    <script>
+        Polymer({
+            is: 'icon-edit-contact',
+            properties: {
+                /**
+                 * Id of the contact
+                 */
+                user_id: String
+            },
+            /**
+             * Called when edit button was clicked.
+             * @private
+             */
+            _editClicked: function () {
+                this.fire('edit', {"user_id": this.user_id});
+            }
+        });
+    </script>
+</dom-module>

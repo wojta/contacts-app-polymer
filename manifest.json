@@ -1,0 +1,7 @@
+{
+  "name": "Contacts Demo",
+  "short_name": "Contacts Demo",
+  "description": "This is a demo for Implementation part of RedHat interview screener.",
+  "start_url": "/",
+  "display": "standalone"
+}

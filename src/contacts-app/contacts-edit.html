@@ -1,0 +1,201 @@
+<link rel="import" href="../../bower_components/app-route/app-route.html">
+<link rel="import" href="../../bower_components/app-route/app-location.html">
+<link rel="import" href="../../bower_components/paper-scroll-header-panel/paper-scroll-header-panel.html">
+<link rel="import" href="../../bower_components/paper-toolbar/paper-toolbar.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/iron-media-query/iron-media-query.html">
+<link rel="import" href="../../bower_components/paper-styles/color.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../../bower_components/iron-meta/iron-meta.html">
+<link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../../bower_components/paper-item/paper-icon-item.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item-body.html">
+<link rel="import" href="../../bower_components/paper-divider/paper-divider.html">
+<link rel="import" href="../../bower_components/iron-icons/communication-icons.html">
+<link rel="import" href="../../bower_components/paper-spinner/paper-spinner.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/gold-email-input/gold-email-input.html">
+<link rel="import" href="../../bower_components/gold-phone-input/gold-phone-input.html">
+<link rel="import" href="../../bower_components/paper-toast/paper-toast.html">
+<link rel="stylesheet" href="../../bower_components/paper-styles/demo.css">
+<!--
+ Element for editing or creating the contact.
+-->
+<dom-module id="contacts-edit">
+    <template>
+
+        <app-route
+                id="route"
+                route="{{route}}"
+                pattern="/:user_id"
+                data="{{routeData}}"></app-route>
+        <iron-meta id="meta"></iron-meta>
+        <!-- AJAX request to API to get the contact detail -->
+        <iron-ajax id="loadContact"
+                   url="[[_getRestUrl()]]/users/{{routeData.user_id}}"
+                   params='{}'
+                   handle-as="json"
+                   on-response="_detailLoaded"
+                   debounce-duration="300"></iron-ajax>
+        <!-- AJAX request to API to update the contact -->
+        <iron-ajax id="contactUpdate" method="PUT" on-response="_saved"
+                   handle-as="json"
+                   content-type="application/json"
+                   body="[[user_body]]"
+                   url="[[_getRestUrl()]]/users/{{routeData.user_id}}"
+                   on-error="_error"
+        ></iron-ajax>
+        <!-- AJAX request to API to create new contact -->
+        <iron-ajax id="contactCreate" method="POST" on-response="_saved" url="[[_getRestUrl()]]/users"
+                   content-type="application/json"
+                   handle-as="json"
+                   body="[[user_body]]"
+                   on-error="_error"
+
+        ></iron-ajax>
+        <style include="iron-flex"></style> <!-- styles for flex layout -->
+        <style>
+            paper-button.indigo {
+                background-color: var(--paper-indigo-500);
+                color: white;
+                --paper-button-raised-keyboard-focus: {
+                    background-color: var(--paper-pink-a200) !important;
+                    color: white !important;
+                };
+            }
+
+            .flex-end-justified {
+                @apply(--layout-horizontal);
+                @apply(--layout-end-justified);
+            }
+        </style>
+
+        <!-- edit contact form -->
+        <div style="padding-left:32px;padding-right:32px;">
+            <div hidden="{{loading}}" class="vertical layout center-justified">
+                <paper-input label="First name" minlength="1" value="{{user.name.first}}" auto-validate
+                             required></paper-input> <!-- first name -->
+                <paper-input label="Last name" minlength="1" value="{{user.name.last}}" auto-validate
+                             required></paper-input> <!-- last name -->
+                <gold-phone-input label="Cell phone" value="{{user.cell}}" auto-validate></gold-phone-input> <!-- cellular phone -->
+                <gold-phone-input label="Phone" value="{{user.phone}}" auto-validate></gold-phone-input> <!-- fixed phone -->
+                <gold-email-input label="E-mail" value="{{user.email}}" auto-validate></gold-email-input> <!-- email address -->
+                <div class="container flex-end-justified" style="padding-top: 16px;" on-tap="_saveContact">
+                    <paper-button raised class="indigo">Save</paper-button> <!-- save button -->
+                </div>
+            </div>
+            <div hidden="{{!loading}}" class="horizontal layout center-justified">
+                <paper-spinner active></paper-spinner>
+            </div>
+        </div>
+        <paper-dialog id="errorDialog">
+            <h2>Error</h2>
+            <p id="errorDialogText">Unable to save contact.</p>
+            <div class="buttons">
+                <paper-button dialog-confirm autofocus>OK</paper-button>
+            </div>
+
+        </paper-dialog>
+        <paper-toast id="toast"></paper-toast>
+    </template>
+    <script>
+        Polymer({
+            is: 'contacts-edit',
+            properties: {
+                /**
+                 * Loaded user is in this property.
+                 */
+                user: Object,
+                /**
+                 * Loading is in progress when true.
+                 */
+                loading: Boolean,
+                /**
+                 * If true new contact is being created, if false it's editing existing contact.
+                 */
+                create_mode: Boolean
+            },
+            observers: [
+                '_routeChanged(route)'
+            ],
+            /**
+             * @return {*} Returns REST URL to backend
+             * @private
+             */
+            _getRestUrl: function () {
+                return this.$.meta.byKey('rest_url');
+            }
+            ,
+            /**
+             * Called when detail is received from backend.
+             * @param data response data received
+             * @private
+             */
+            _detailLoaded: function (data) {
+                this.set('user', data.detail.response);
+                this.loading = false;
+            }
+            ,
+            /**
+             * Called when route is changed, this means user requested add or edit contact
+             * @param route
+             * @private
+             */
+            _routeChanged: function (route) {
+                if (route.path != "" && this.routeData.user_id) {
+                    this.loading = true;
+                    this.$.loadContact.generateRequest();
+                    this.create_mode = false;
+                } else {
+                    this.user = {'name': {}};
+                    this.create_mode = true;
+                    this.loading = false;
+                }
+            },
+            /**
+             * Performs save of the contact's data.
+             * @private
+             */
+            _saveContact: function () {
+                var ajax = this.create_mode ? this.$.contactCreate : this.$.contactUpdate;
+                ajax.body = JSON.stringify(this.user);
+                ajax.generateRequest();
+            }
+            ,
+            /**
+             * Called when contact was successfully saved.
+             * @param data it contains response from the API call.
+             * @private
+             */
+            _saved: function (data) {
+                this.$.toast.show({
+                    text: 'Contact ' + (this.create_mode ? 'created' : 'updated.'),
+                    duration: 3000
+                });
+                this.fire('saved', this.create_mode ? data.detail.response : this.user);
+            }
+            ,
+
+            /**
+             * Called when contact was not saved and error has returned from server.
+             * @param data information about the error
+             * @private
+             */
+            _error: function (data) {
+                var response = data.detail.request.xhr.response; //this is different approach how to get body from the error response
+                var errorText = 'Unable to save contact'; //default
+                if (response && response.error) { //this is when 400 error occured and response contains error explanation
+                    //validation error show dialog
+                    errorText = response.error;
+                }
+                //shows the dialog
+                this.$.errorDialogText.innerHTML = errorText;
+                this.$.errorDialog.open();
+            }
+        })
+        ;
+    </script>
+</dom-module>

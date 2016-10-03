@@ -1,0 +1,162 @@
+<link rel="import" href="../../bower_components/app-route/app-route.html">
+<link rel="import" href="../../bower_components/app-route/app-location.html">
+<link rel="import" href="../../bower_components/paper-scroll-header-panel/paper-scroll-header-panel.html">
+<link rel="import" href="../../bower_components/paper-toolbar/paper-toolbar.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/iron-media-query/iron-media-query.html">
+<link rel="import" href="../../bower_components/paper-styles/color.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../../bower_components/iron-meta/iron-meta.html">
+<link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../../bower_components/paper-item/paper-icon-item.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item-body.html">
+<link rel="import" href="../../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../../bower_components/paper-divider/paper-divider.html">
+<link rel="import" href="../../bower_components/iron-icons/communication-icons.html">
+<link rel="import" href="../../bower_components/paper-spinner/paper-spinner.html">
+<link rel="import" href="../../bower_components/paper-spinner/paper-spinner-lite.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="stylesheet" href="../../bower_components/paper-styles/demo.css">
+<!--
+    Element for rendering contact detail.
+-->
+<dom-module id="contacts-detail">
+    <template>
+        <app-route
+                route="{{route}}"
+                pattern="/:user_id"
+                data="{{routeData}}"></app-route>
+        <iron-meta id="meta"></iron-meta>
+        <iron-media-query query="(min-width: 600px)" query-matches="{{big_width}}"></iron-media-query>
+        <!-- AJAX request to API to get the contact detail -->
+        <iron-ajax
+                auto
+                url="[[_getRestUrl()]]/users/{{routeData.user_id}}"
+                params='{}'
+                handle-as="json"
+                on-response="_detailLoaded"
+                debounce-duration="300"></iron-ajax>
+        <style include="iron-flex"></style> <!-- styles for flex layout -->
+        <style>
+            paper-card {
+                --paper-card-header-text: {
+                    color: white;
+                };
+                --paper-card-header: {
+                    background-color: var(--paper-blue-400) !important;
+                };
+                --paper-card-header-image: {
+                    margin-top: -25%;
+                };
+            }
+
+            paper-card.wide {
+                width: 600px;
+            }
+
+            iron-icon.black {
+                --iron-icon-stroke-color: black;
+            }
+
+        </style>
+
+        <div style="padding:16px;">
+            <div hidden="{{loading}}" class="horizontal layout center-justified">
+                <!-- card with title and photo -->
+                <paper-card heading="{{user.name.first}} {{user.name.last}}" image="{{user.picture.large}}"
+                            alt="{{user.name.first}} {{user.name.last}}" class$="{{cardWide}}">
+                    <div class="card-content" hidden="{{!routeData.user_id}}">
+                        <paper-icon-item hidden="{{!user.phone}}">      <!-- mobile phone -->
+                            <iron-icon icon="communication:phone" item-icon>
+                            </iron-icon>
+                            <paper-item-body two-line>
+                                <div>{{user.phone}}</div>
+                                <div secondary>Mobile</div>
+                            </paper-item-body>
+                        </paper-icon-item>
+                        <paper-divider></paper-divider>
+                        <paper-icon-item hidden="{{!user.cell}}">       <!-- fixed  phone -->
+                            <iron-icon icon="communication:phone" item-icon>
+                            </iron-icon>
+                            <paper-item-body two-line hidden="{{!phone}}">
+                                <div>{{user.cell}}</div>
+                                <div secondary>Cell</div>
+                            </paper-item-body>
+                        </paper-icon-item>
+                        <paper-divider></paper-divider>
+                        <paper-icon-item hidden="{{!user.email}}">      <!-- e-mail address -->
+                            <iron-icon icon="communication:email" item-icon class="black">
+                            </iron-icon>
+                            <paper-item-body two-line hidden="{{!phone}}">
+                                <div>{{user.email}}</div>
+                                <div secondary>E-mail</div>
+                            </paper-item-body>
+                        </paper-icon-item>
+                    </div>
+                    <paper-material elevation="2" hidden="{{routeData.user_id}}"> <!-- when no contact is selected -->
+                        Please select contact to view it.
+                    </paper-material>
+                </paper-card>
+            </div>
+            <div hidden="{{!loading}}" class="horizontal layout center-justified"> <!-- loading spinner -->
+                <paper-spinner active></paper-spinner>
+            </div>
+        </div>
+
+    </template>
+    <script>
+        Polymer({
+            is: 'contacts-detail',
+            properties: {
+                /**
+                 * Loaded user is in this property.
+                 */
+                user: Object,
+                /**
+                 * Loading is in progress when true.
+                 */
+                loading: Boolean,
+                /**
+                 * big_width is true when there is more than 600px width space for detail.
+                 */
+                big_width: {
+                    type: Boolean,
+                    observer: '_widthChanged'
+                },
+                /**
+                 * CSS Class used to reduce detail size, when screen is smaller.
+                 */
+                cardWide: String
+            },
+            ready: function () {
+                this.loading = true;
+            },
+            /**
+             * @return {*} Returns REST URL to backend
+             * @private
+             */
+            _getRestUrl: function () {
+                return this.$.meta.byKey('rest_url');
+            },
+            /**
+             * Called when detail is received from backend.
+             * @param data response data received
+             * @private
+             */
+            _detailLoaded: function (data) {
+                this.set('user', data.detail.response);
+                this.loading = false;
+            },
+            /**
+             * Called when width is changed.
+             * @param data
+             * @private
+             */
+            _widthChanged: function () {
+                this.cardWide = this.big_width ? "wide" : "";
+            }
+        });
+    </script>
+</dom-module>
