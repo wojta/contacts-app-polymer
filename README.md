@@ -17,7 +17,7 @@ Check wireframes for [this application here](MOCKUP.md)
 * node_modules - custom backend components
 * [seed](seed) - data to be filled for tests
 * [src](src) - sources for frontend, Polymer elements
-* [test](test - tests
+* [test](test) - tests
 * [validation](validation) - backend validations (currently only users)
 * [API.md](API.md) - REST API documentation
 * [app.js](app.js) - Backend Node.js app
